@@ -7,6 +7,7 @@ struct buffer {
   size_t alloc_by;  //- number of items to grow buffer (capacity) by when growing automatically
   size_t item_size; //- number of bytes per item
   void *data;       //- pointer to buffer
+  void **buffer;
   void (*destructor)(void *);// - item destructor
 };
 

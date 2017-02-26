@@ -24,6 +24,7 @@ void buffer_init(struct buffer *inst, size_t item_size, size_t capacity,
     inst->alloc_by   = alloc_by;
     inst->data       = NULL;
     inst->destructor = destructor;
+    inst->buffer     = NULL;
 
     buffer_alloc(inst, capacity);
     printf("%s\n", "buffer_init");
@@ -34,27 +35,11 @@ void buffer_init(struct buffer *inst, size_t item_size, size_t capacity,
 void buffer_destroy(struct buffer *inst)
 {
     printf("%s\n", "buffer_destroy");
-    // if (inst->destructor) {
-    //     ((destr)(inst->destructor))(inst->data);
-    // }
-    while(inst->data){
-        if (inst->destructor) {
-            //printf("Length before: %d\n", (int)inst->length);
-            //printf("inst data: %p\n", inst->data);
-            //printf("buff front: %p\n", buffer_front(inst));
-            //((destr)(inst->destructor))(buffer_back(inst));
-            if (inst->data == 0){
-                free(inst->data);
-            }
-            inst->data += inst->item_size;
-            //printf("%d\n", sizeof(inst->data));
-            //assert(inst->item_size == sizeof(int*));
-            --inst->length;
-            //printf("bkbkb%d\n", (int)inst->length);
-        } else{
-            break;
-        }
+    for(int i = 0; i < inst->capacity; i++){
+        ((destr)(inst->destructor))(inst->buffer[i]);
     }
+    inst->length = 0;
+    free((inst->buffer));
     inst = NULL;
     printf("%s\n", "buffer_destroy");
 }
@@ -63,21 +48,10 @@ void buffer_destroy(struct buffer *inst)
 static void try_realloc(struct buffer *inst, size_t new_capacity)
 {
     printf("%s\n", "try_realloc");
-    // void *succeds = realloc(inst->data, inst->item_size * new_capacity);
-    // if(succeds){
-    //     inst->data     = succeds;
-    //     inst->capacity = new_capacity;
-    //     if (inst->length > new_capacity) {
-    //         inst->length = inst->capacity;
-    //     }
-    // } else {
-    //     perror("Error - realloc failed!\n");
-    // }
-
+    inst->buffer = realloc(inst->buffer, new_capacity * sizeof(void*));
     for (size_t i = inst->capacity; i < new_capacity; ++i) {
-        inst->data += i * inst->item_size;
-        inst->data =  malloc(inst->item_size);
-        if (!inst->data){
+        inst->buffer[i] =  malloc(inst->item_size);
+        if (!inst->buffer){
             break;
         }  
     }
@@ -112,7 +86,6 @@ void buffer_reserve(struct buffer *inst, size_t min_capacity)
 {
     printf("%s\n", "buffer_reserve");
     if(inst->capacity < min_capacity) {
-        printf("%s\n", "buffer_reserve_iffff");
         try_realloc(inst, min_capacity);
     }
     printf("%s\n", "buffer_reserve");
@@ -128,7 +101,6 @@ void buffer_resize(struct buffer *inst, size_t length)
     size_t buffer_length = buffer_size(inst);
     // growing
     if (buffer_length < length) {
-        printf("%s\n", "buffer_resize_iffff");
         buffer_reserve(inst, length);
         // for(int i = buffer_length; i < length; ++i){
         //     *(int*)(inst->data + i * inst->item_size) = 0;
@@ -147,7 +119,7 @@ void buffer_push_back(struct buffer *inst, void *item)
     printf("Length : %d\n", (int)length);
     ++inst->length;
     if (length <= inst->capacity) {
-        void *new_item = buffer_at(inst, inst->length - 1);
+        void *new_item = buffer_at(inst, length);
         if (item) {
             memcpy(new_item, item, inst->item_size);
         } else {
@@ -156,14 +128,13 @@ void buffer_push_back(struct buffer *inst, void *item)
     } else {
         buffer_resize(inst, inst->alloc_by);
     }
-    printf("Length after push : %d\n", (int)inst->length);
     printf("%s\n", "buffer_push_back");
 }
 
 // Pointer to first item in buffer
 void *buffer_front(struct buffer *inst)
 {
-    if (inst) return inst->data;
+    if (inst) return inst->buffer[0];
 }
 
 // Pointer to last item in buffer
@@ -189,11 +160,12 @@ bool buffer_pop(struct buffer *inst, void *out)
         memcpy(out, buffer_back(inst), inst->item_size);
         // TODO: call destructor on item
         // inst->destructor
-        if (inst->destructor) {
-            ((destr)(inst->destructor))(buffer_back(inst));
-            --inst->length;
-            //buffer_back(inst) = NULL;
-        }
+        // if (inst->destructor) {
+        //     ((destr)(inst->destructor))(buffer_back(inst));
+        //     --inst->length;
+        //     //buffer_back(inst) = NULL;
+        // }
+        --inst->length;
         printf("%s\n", "buffer_pop");
         return true;
     }
@@ -235,9 +207,7 @@ void *buffer_at(struct buffer *inst, size_t index)
     if (index >= inst->length) {
         return NULL;
     }
-    //printf("Buffer at: %d\n", (int)index);
-    //printf("BUffert at(value)%d\n", *(int*)(inst->data + index * inst->item_size));
-    return (void *)(inst->data + index * inst->item_size);
+    return (inst->buffer[index]);
 }
 
 void destruct_size_t_item(void *item){
@@ -270,14 +240,13 @@ int main(){
     assert(buffer_front(&inst) == buffer_back(&inst));
     printf("%d\n", *(int*)buffer_at(&inst, 0));
 
-    // void *out = malloc(sizeof (int*));;
-    // assert(buffer_pop(&inst, out));
+    void *out = malloc(sizeof (int*));;
+    assert(buffer_pop(&inst, out));
 
-    // assert(buffer_empty(&inst));
-    // assert(buffer_size(&inst) == 0);
-    // // printf("%d\n", *(int*)out);
-    // assert(*(int*)out == 64);
-    // free(out);
+    assert(buffer_empty(&inst));
+    assert(buffer_size(&inst) == 0);
+    assert(*(int*)out == 64);
+    free(out);
 
 
 
@@ -286,7 +255,7 @@ int main(){
     buffer_push_back(&inst, t);
     // assert(buffer_size(&inst) == 1);
     // assert(*(int*)buffer_at(&inst, 0) == 128);
-    // assert(buffer_front(&inst) == buffer_back(&inst));
+    assert(buffer_front(&inst) == buffer_back(&inst));
     printf("%d\n", *(int*)buffer_at(&inst, 0));
 
     int *u = malloc(sizeof (int*));
@@ -296,29 +265,30 @@ int main(){
     //assert(*(int*)buffer_at(&inst, 1) == 128);
     printf("%d\n", *(int*)buffer_at(&inst, 0));
     printf("%d\n", *(int*)buffer_at(&inst, 1));
-    // assert(*(int*)buffer_at(&inst, 1) == 256);
-    // assert(buffer_front(&inst) != buffer_back(&inst));
+    printf("front: %d\n", *(int*)buffer_front(&inst));
+    printf("back: %d\n", *(int*)buffer_back(&inst));
+    assert(*(int*)buffer_at(&inst, 1) == 256);
+    assert(buffer_front(&inst) != buffer_back(&inst));
 
     int *m = malloc(sizeof (int*));
     *m = 512;
     buffer_push_back(&inst, m);
-    //assert(buffer_size(&inst) == 3);
-    //assert(*(int*)buffer_at(&inst, 1) == 128);
+    assert(buffer_size(&inst) == 3);
+    assert(*(int*)buffer_at(&inst, 1) == 256);
     printf("%d\n", *(int*)buffer_at(&inst, 0));
     printf("%d\n", *(int*)buffer_at(&inst, 1));
     printf("%d\n", *(int*)buffer_at(&inst, 2));
-    printf("%d\n", *(int*)buffer_at(&inst, 3));
-    // assert(*(int*)buffer_at(&inst, 1) == 256);
-    // assert(buffer_front(&inst) != buffer_back(&inst));
+    // printf("%d\n", *(int*)buffer_at(&inst, 3));
+    assert(*(int*)buffer_front(&inst) == 128);
 
     
 
     
-    // free(p);
-    // free(t);
-    // free(u);
-    // free(m);
-    // buffer_destroy(&inst);
+    free(p);
+    free(t);
+    free(u);
+    free(m);
+    buffer_destroy(&inst);
     
     return 0;
 }
