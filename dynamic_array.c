@@ -208,7 +208,7 @@ size_t item_size(struct buffer *inst)
     }
 }
 
-// Pointer to n'th item in buffer
+// Pointer to nth item in buffer
 void *buffer_at(struct buffer *inst, size_t index)
 {
     if (index >= inst->length) {
@@ -224,109 +224,114 @@ void destruct_size_t_item(void *item){
 
 
 // TESTING
-//#if defined TEST_DYNAMIC_ARRAY
+#if defined TEST_DYNAMIC_ARRAY
 
-
-int main(){
+struct buffer init()
+{
     struct buffer inst;
-
     destr destruct_func = &destruct_size_t_item;
     buffer_init(&inst, sizeof(int*), 5, 2, destruct_func);
+    return inst;
+}
+
+void test_init()
+{
+    struct buffer inst = init();
     assert(buffer_empty(&inst));
     assert(buffer_size(&inst) == 0);
     assert(item_size(&inst) == 8);
     assert(buffer_at(&inst, 89) == NULL);
 
+    buffer_destroy(&inst);
+}
+
+void test_add_elem()
+{   
+    struct buffer inst = init();
     int *p = malloc(sizeof (int*));
     *p = 64;
     buffer_push_back(&inst, p);
+
     assert(!buffer_empty(&inst));
     assert(buffer_size(&inst) == 1);
     assert(*(int*)buffer_at(&inst, 0) == 64);
     assert(buffer_front(&inst) == buffer_back(&inst));
-    // printf("%d\n", *(int*)buffer_at(&inst, 0));
+    free(p);
+    buffer_destroy(&inst);
+}
 
-    void *out = malloc(sizeof (int*));;
+void test_pop_elem()
+{
+    struct buffer inst = init();
+    int *p = malloc(sizeof (int*));
+    *p = 64;
+    buffer_push_back(&inst, p);
+
+    void *out = malloc(sizeof (int*));
     assert(buffer_pop(&inst, out));
 
     assert(buffer_empty(&inst));
     assert(buffer_size(&inst) == 0);
     assert(*(int*)out == 64);
+
     free(out);
+    free(p);
+    buffer_destroy(&inst);
+}
 
-
-
-    int *t = malloc(sizeof (int*));
-    *t = 128;
-    buffer_push_back(&inst, t);
-    // assert(buffer_size(&inst) == 1);
-    // assert(*(int*)buffer_at(&inst, 0) == 128);
-    assert(buffer_front(&inst) == buffer_back(&inst));
-    // printf("%d\n", *(int*)buffer_at(&inst, 0));
-
-    int *u = malloc(sizeof (int*));
-    *u = 256;
-    buffer_push_back(&inst, u);
-    // assert(buffer_size(&inst) == 2);
-    // assert(*(int*)buffer_at(&inst, 1) == 128);
-    // printf("%d\n", *(int*)buffer_at(&inst, 0));
-    // printf("%d\n", *(int*)buffer_at(&inst, 1));
-    // printf("front: %d\n", *(int*)buffer_front(&inst));
-    // printf("back: %d\n", *(int*)buffer_back(&inst));
-    assert(*(int*)buffer_at(&inst, 1) == 256);
-    assert(buffer_front(&inst) != buffer_back(&inst));
-
-    int *m = malloc(sizeof (int*));
-    *m = 512;
-    buffer_push_back(&inst, m);
-    assert(buffer_size(&inst) == 3);
-    assert(*(int*)buffer_at(&inst, 1) == 256);
-    // printf("%d\n", *(int*)buffer_at(&inst, 0));
-    // printf("%d\n", *(int*)buffer_at(&inst, 1));
-    // printf("%d\n", *(int*)buffer_at(&inst, 2));
-    // printf("%d\n", *(int*)buffer_at(&inst, 3));
-    assert(*(int*)buffer_front(&inst) == 128);
-
+void test_resize()
+{
+    struct buffer inst = init();
+    int *p = malloc(sizeof (int*));
+    *p = 64;
+    buffer_push_back(&inst, p);
+    *p = 128;
+    buffer_push_back(&inst, p);
+    assert(buffer_size(&inst) == 2);
 
     buffer_resize(&inst, 1);
     assert(buffer_size(&inst) == 1);
-    assert(*(int*)buffer_at(&inst, 0) == 128);
+    assert(*(int*)buffer_at(&inst, 0) == 64);
     assert(buffer_front(&inst) == buffer_back(&inst));
 
-    // buffer_reserve(&inst, 5);
-    // assert(buffer_size(&inst) == 1);
-    // assert(buffer_front(&inst) == buffer_back(&inst));
-    // assert((&inst)->capacity = 5);
-
-    int *l = malloc(sizeof (int*));
-    *l = 1024;
-    buffer_push_back(&inst, l);
-    buffer_push_back(&inst, l);
-    buffer_push_back(&inst, l);
-    buffer_push_back(&inst, l);
-    // assert(buffer_size(&inst) == 2);
-    // assert(*(int*)buffer_at(&inst, 0) == 128);
-    // assert(*(int*)buffer_at(&inst, 1) == 512);
-    // assert(buffer_front(&inst) != buffer_back(&inst));
-
-    buffer_pop(&inst, m);
-    buffer_push_back(&inst, l);
-    buffer_pop(&inst, m);
-
-
-    
-    
-    buffer_destroy(&inst);
     free(p);
-    free(t);
-    free(u);
-    free(m);
-    free(l);
+    buffer_destroy(&inst);
+}
+
+void test_reserve()
+{
+    struct buffer inst = init();
+    int *p = malloc(sizeof (int*));
+    *p = 64;
+    buffer_push_back(&inst, p);
+    *p = 128;
+    buffer_push_back(&inst, p);
+    buffer_resize(&inst, 1);
+
+    buffer_reserve(&inst, 5);
+    assert(buffer_size(&inst) == 1);
+    assert(buffer_front(&inst) == buffer_back(&inst));
+    assert((&inst)->capacity = 5);
+    assert(*(int*)buffer_at(&inst, 0) == 64);
+
+    free(p);
+    buffer_destroy(&inst);
+}
+
+int main(){
+    printf("%s\n", "Starting tests...");
+    test_init();
+    test_add_elem();
+    test_pop_elem();
+    test_resize();
+    test_reserve();
+
+    printf("%s\n", "All tests passed!");
     
     return 0;
 }
 
-//#endif
+#endif
 
 
 //   A linked-list wrapper would have a similar interface, but there would be 
