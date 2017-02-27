@@ -60,7 +60,7 @@ size_t buffer_size(struct buffer *inst);
 // Pointer to n'th item in buffer
 void *buffer_at(struct buffer *inst, size_t idx);
 
-void* realloc_zero(void* pBuffer, size_t oldSize, size_t newSize);
+void* realloc_zero(void* old_buffer, size_t old_size, size_t new_size);
 
 
 //A linked-list wrapper would have a similar interface, but there would be no index/length/capacity 
