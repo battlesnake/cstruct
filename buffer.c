@@ -43,17 +43,30 @@ const void *buffer_cdata(const struct buffer *inst)
 	return inst->data;
 }
 
+void *buffer_ptr(struct buffer *inst, size_t index)
+{
+	return (void *) ((char *) inst->data + index * inst->item_size);
+}
+
+const void *buffer_cptr(const struct buffer *inst, size_t index)
+{
+	return buffer_ptr((struct buffer *)inst, index);
+}
+
 void *buffer_get(struct buffer *inst, size_t index)
 {
 	if (index >= inst->length) {
 		return NULL;
 	}
-	return (void *) ((char *) inst->data + index * inst->item_size);
+	return buffer_ptr(inst, index);
 }
 
-const void *buffer_cget(const struct buffer *inst, size_t index)
+const void *buffer_rget(const struct buffer *inst, size_t index)
 {
-	return buffer_get((struct buffer *)inst, index);
+	if (index >= inst->length) {
+		return NULL;
+	}
+	return buffer_cptr(inst, index);
 }
 
 void buffer_clear(struct buffer *inst)

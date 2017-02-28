@@ -22,8 +22,13 @@ void buffer_resize(struct buffer *inst, size_t size);
 void *buffer_data(struct buffer *inst);
 const void *buffer_cdata(const struct buffer *inst);
 
+/* Performs range-check, returns NULL for out-of-range */
 void *buffer_get(struct buffer *inst, size_t index);
 const void *buffer_cget(const struct buffer *inst, size_t index);
+
+/* No range-checking */
+void *buffer_ptr(struct buffer *inst, size_t index);
+const void *buffer_cptr(const struct buffer *inst, size_t index);
 
 void *buffer_head(struct buffer *inst);
 void *buffer_tail(struct buffer *inst);
