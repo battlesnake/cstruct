@@ -147,20 +147,22 @@ void buffer_push_back(struct buffer *inst, void *item)
             --inst->length;
         }
     } else {
+        --inst->length;
         buffer_reserve(inst, inst->alloc_by + length);
+        buffer_push_back(inst, item);
     }
 }
 
 // Pointer to first item in buffer
 void *buffer_front(struct buffer *inst)
 {
-    if (inst) return inst->buffer[0];
+    return inst->buffer[0];
 }
 
 // Pointer to last item in buffer
 void *buffer_back(struct buffer *inst)
 {
-    if (inst) return buffer_at(inst, buffer_size(inst) - 1);
+    return buffer_at(inst, buffer_size(inst) - 1);
 }
 
 // Take last item from buffer
@@ -218,7 +220,7 @@ void destruct_size_t_item(void *item){
 // TESTING
 #if defined TEST_DYNAMIC_ARRAY
 
-static struct buffer  init()
+static struct buffer init()
 {
     struct buffer inst;
     destr destruct_func = &destruct_size_t_item;
@@ -237,7 +239,7 @@ static void test_init()
     buffer_destroy(&inst);
 }
 
-static void test_add_elem()
+static void test_push_elem()
 {   
     struct buffer inst = init();
     int *p = malloc(sizeof (int*));
@@ -248,6 +250,31 @@ static void test_add_elem()
     assert(buffer_size(&inst) == 1);
     assert(*(int*)buffer_at(&inst, 0) == 64);
     assert(buffer_front(&inst) == buffer_back(&inst));
+    free(p);
+    buffer_destroy(&inst);
+}
+
+static void test_push_elem_force_reserve()
+{   
+    struct buffer inst = init();
+    int *p = malloc(sizeof (int*));
+    *p = 64;
+    buffer_push_back(&inst, p);
+    buffer_push_back(&inst, p);
+    buffer_push_back(&inst, p);
+    buffer_push_back(&inst, p);
+    buffer_push_back(&inst, p);
+
+    assert((&inst)->capacity == 5);
+    assert(buffer_size(&inst) == 5);
+
+    buffer_push_back(&inst, p);
+
+    assert((&inst)->capacity == 7);
+    assert(buffer_size(&inst) == 6);
+    assert(*(int*)buffer_at(&inst, 5) == 64);
+
+
     free(p);
     buffer_destroy(&inst);
 }
@@ -303,7 +330,7 @@ static void test_reserve()
     buffer_reserve(&inst, 5);
     assert(buffer_size(&inst) == 1);
     assert(buffer_front(&inst) == buffer_back(&inst));
-    assert((&inst)->capacity = 5);
+    assert((&inst)->capacity == 5);
     assert(*(int*)buffer_at(&inst, 0) == 64);
 
     free(p);
@@ -313,7 +340,8 @@ static void test_reserve()
 int main(){
     printf("%s\n", "Starting tests...");
     test_init();
-    test_add_elem();
+    test_push_elem();
+    test_push_elem_force_reserve();
     test_pop_elem();
     test_resize();
     test_reserve();
