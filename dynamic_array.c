@@ -218,7 +218,7 @@ void destruct_size_t_item(void *item){
 // TESTING
 #if defined TEST_DYNAMIC_ARRAY
 
-struct buffer init()
+static struct buffer  init()
 {
     struct buffer inst;
     destr destruct_func = &destruct_size_t_item;
@@ -226,7 +226,7 @@ struct buffer init()
     return inst;
 }
 
-void test_init()
+static void test_init()
 {
     struct buffer inst = init();
     assert(buffer_empty(&inst));
@@ -237,7 +237,7 @@ void test_init()
     buffer_destroy(&inst);
 }
 
-void test_add_elem()
+static void test_add_elem()
 {   
     struct buffer inst = init();
     int *p = malloc(sizeof (int*));
@@ -252,7 +252,7 @@ void test_add_elem()
     buffer_destroy(&inst);
 }
 
-void test_pop_elem()
+static void test_pop_elem()
 {
     struct buffer inst = init();
     int *p = malloc(sizeof (int*));
@@ -271,7 +271,7 @@ void test_pop_elem()
     buffer_destroy(&inst);
 }
 
-void test_resize()
+static void test_resize()
 {
     struct buffer inst = init();
     int *p = malloc(sizeof (int*));
@@ -290,7 +290,7 @@ void test_resize()
     buffer_destroy(&inst);
 }
 
-void test_reserve()
+static void test_reserve()
 {
     struct buffer inst = init();
     int *p = malloc(sizeof (int*));
