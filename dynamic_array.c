@@ -183,33 +183,21 @@ bool buffer_pop(struct buffer *inst, void *out)
 }
 
 // Return true if buffer is empty (length == 0)
-bool buffer_empty(struct buffer *inst){
-    if (inst){
-       return (buffer_size(inst) == 0); 
-    } else {
-        exit(0);
-    }
-
+bool buffer_empty(struct buffer *inst)
+{
+    return (buffer_size(inst) == 0); 
 }
 
 // Number of items in the buffer (length)
 size_t buffer_size(struct buffer *inst)
 {
-    if (inst) {
-        return inst->length;
-    } else {
-        exit(0);
-    }
+    return inst->length;
 }
 
 // Item size of the elements in the buffer(item_size)
 size_t item_size(struct buffer *inst)
 {
-    if (inst) {
-        return inst->item_size;
-    } else {
-        exit(0);
-    }
+    return inst->item_size;
 }
 
 // Pointer to nth item in buffer
