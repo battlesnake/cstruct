@@ -36,9 +36,9 @@ void buffer_destroy(struct buffer *inst)
 // If realloc SUCCEDS we modify the size
 static void try_realloc(struct buffer *inst, size_t new_capacity)
 {
-    inst->buffer = realloc_zero(inst->buffer, 
-                                buffer_size(inst) * sizeof(void*),
-                                new_capacity * sizeof(void*));
+    inst->buffer = buffer_realloc_zero(inst->buffer, 
+                                       buffer_size(inst) * sizeof(void*),
+                                       new_capacity * sizeof(void*));
     for (size_t i = inst->capacity; i < new_capacity; ++i) {
         void *succeds =  realloc(inst->buffer[i], inst->item_size);
         if (succeds){
@@ -76,9 +76,9 @@ void buffer_reserve(struct buffer *inst, size_t min_capacity)
 {
     if(inst->capacity < min_capacity) {
         size_t previous_capacity = inst->capacity;
-        inst->buffer = realloc_zero(inst->buffer, 
-                       previous_capacity * sizeof(void*), 
-                       min_capacity * sizeof(void*));
+        inst->buffer = buffer_realloc_zero(inst->buffer, 
+                                           previous_capacity * sizeof(void*), 
+                                           min_capacity * sizeof(void*));
         
         for (size_t i = inst->capacity; i < min_capacity; ++i) {
             void *succeds =  realloc(inst->buffer[i], inst->item_size);
@@ -95,7 +95,7 @@ void buffer_reserve(struct buffer *inst, size_t min_capacity)
 
 // If realloc needs to increase size, safely increase and 
 // memset the new data to zero;
-void* realloc_zero(void* old_buffer, size_t old_size, size_t new_size) 
+void* buffer_realloc_zero(void* old_buffer, size_t old_size, size_t new_size) 
 {
     void* new_buffer = realloc(old_buffer, new_size);
     if (new_size > old_size && new_buffer) {
