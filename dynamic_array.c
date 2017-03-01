@@ -103,7 +103,8 @@ void* buffer_realloc_zero(void* old_buffer, size_t old_size, size_t new_size)
         void* start = new_buffer + old_size;
         memset(start, 0, diff);
     } else {
-        exit(0);
+        log_error("%s\n", "Memset failed!");
+        abort();
     }
     return new_buffer;
 }
@@ -125,7 +126,8 @@ void buffer_resize(struct buffer *inst, size_t new_length)
         if (succeds) {
             inst->buffer = succeds;
         } else {
-            exit(0);
+            log_error("%s\n", "Realloc failed!");
+            abort();
         }
     }
     inst->capacity = new_length;
