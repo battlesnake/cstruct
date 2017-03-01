@@ -1,4 +1,5 @@
 #include "dynamic_array.h"
+#include "cstd/log.h"
 
 // NOTE: When we destroy items, we call the destructor for them 
 // iff the destructor is not NULL.
@@ -42,7 +43,8 @@ static void try_realloc(struct buffer *inst, size_t new_capacity)
         if (succeds){
             inst->buffer[i] = succeds;
         } else {
-            exit(0);
+            log_error(Realloc failed!);
+            abort();
         }
     }  
     
@@ -82,7 +84,8 @@ void buffer_reserve(struct buffer *inst, size_t min_capacity)
             if (succeds){
                 inst->buffer[i] = succeds;
             } else {
-                exit(0);
+                log_error(Realloc failed!);
+                abort();
             }
         }
         inst->capacity = min_capacity;
