@@ -74,23 +74,24 @@ void buffer_alloc(struct buffer *inst, size_t new_capacity)
 // Grow the buffer if necessary, to ensure the requested minimum capacity
 void buffer_reserve(struct buffer *inst, size_t min_capacity)
 {
-    if(inst->capacity < min_capacity) {
-        size_t previous_capacity = inst->capacity;
-        inst->buffer = buffer_realloc_zero(inst->buffer, 
-                                           previous_capacity * sizeof(void*), 
-                                           min_capacity * sizeof(void*));
-        
-        for (size_t i = inst->capacity; i < min_capacity; ++i) {
-            void *succeds =  realloc(inst->buffer[i], inst->item_size);
-            if (succeds){
-                inst->buffer[i] = succeds;
-            } else {
-                log_error("%s\n", "Realloc failed!");
-                abort();
-            }
-        }
-        inst->capacity = min_capacity;
+    if(inst->capacity >= min_capacity) {
+        return;
     }
+    size_t previous_capacity = inst->capacity;
+    inst->buffer = buffer_realloc_zero(inst->buffer, 
+                                       previous_capacity * sizeof(void*), 
+                                       min_capacity * sizeof(void*));
+    
+    for (size_t i = inst->capacity; i < min_capacity; ++i) {
+        void *succeds =  realloc(inst->buffer[i], inst->item_size);
+        if (succeds){
+            inst->buffer[i] = succeds;
+        } else {
+            log_error("%s\n", "Realloc failed!");
+            abort();
+        }
+    }
+    inst->capacity = min_capacity;
 }
 
 // If realloc needs to increase size, safely increase and 
