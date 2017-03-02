@@ -1,5 +1,6 @@
 #include "dynamic_array.h"
 #include "cstd/log.c"
+//#include "cstd/functional.h"
 
 // NOTE: When we destroy items, we call the destructor for them 
 // iff the destructor is not NULL.
@@ -11,13 +12,9 @@ void buffer_init(struct buffer *inst, size_t item_size, size_t capacity,
                  size_t alloc_by, void (*destructor)(void *))
 {   
     memset(inst, 0, sizeof(*inst));
-    inst->capacity   = 0;
-    inst->length     = 0;
     inst->item_size  = item_size;
     inst->alloc_by   = alloc_by;
-    inst->data       = NULL;
     inst->destructor = destructor;
-    inst->buffer     = NULL;
 
     buffer_alloc(inst, capacity);
 }
@@ -25,7 +22,7 @@ void buffer_init(struct buffer *inst, size_t item_size, size_t capacity,
 // Destructor - frees the buffer, calling the destructor for each item in the buffer
 void buffer_destroy(struct buffer *inst)
 {
-    for(int i = 0; i < inst->capacity; i++){
+    for(size_t i = 0; i < inst->capacity; i++){
         ((destr)(inst->destructor))(inst->buffer[i]);
     }
     inst->length = 0;
@@ -141,16 +138,15 @@ void buffer_resize(struct buffer *inst, size_t new_length)
 void buffer_push_back(struct buffer *inst, void *item) 
 {   
     size_t length = buffer_size(inst);
-    ++inst->length;
-    if (length < inst->capacity) {
+    if (length < inst->capacity) {  
+        ++inst->length;
         void *new_item = buffer_at(inst, length);
         if (item) {
             memcpy(new_item, item, inst->item_size);
         } else {
-            --inst->length;
+            memset(new_item, 0, inst->item_size);
         }
     } else {
-        --inst->length;
         buffer_reserve(inst, inst->alloc_by + length);
         buffer_push_back(inst, item);
     }
@@ -257,6 +253,19 @@ static void test_push_elem()
     buffer_destroy(&inst);
 }
 
+static void test_push_NULL_elem()
+{   
+    struct buffer inst = init();
+    buffer_push_back(&inst, NULL);
+
+    assert(!buffer_empty(&inst));
+    assert(buffer_size(&inst) == 1);
+    assert(*(int*)buffer_at(&inst, 0) == 0);
+    assert(buffer_front(&inst) == buffer_back(&inst));
+
+    buffer_destroy(&inst);
+}
+
 static void test_push_elem_force_reserve()
 {   
     struct buffer inst = init();
@@ -344,6 +353,7 @@ int main(){
     printf("%s\n", "Starting tests...");
     test_init();
     test_push_elem();
+    test_push_NULL_elem();
     test_push_elem_force_reserve();
     test_pop_elem();
     test_resize();
