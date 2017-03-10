@@ -10,9 +10,9 @@ exit 0
 #include <cstd/std.h>
 #include "binary_tree_iterator.h"
 
-static void enter(struct binary_tree_iterator *inst, struct binary_tree_node *node)
+static void enter(struct binary_tree_iterator *inst, struct binary_tree_node **node)
 {
-	for (; node; node = node->children[inst->reverse ? 1 : 0]) {
+	for (; *node; node = &(*node)->children[inst->reverse ? 1 : 0]) {
 		buffer_push(&inst->stack, &node);
 	}
 }
@@ -21,25 +21,26 @@ void binary_tree_iter_init(struct binary_tree_iterator *inst, struct binary_tree
 {
 	inst->reverse = reverse;
 	buffer_init(&inst->stack, sizeof(struct binary_tree_node *), 64, 64);
-	enter(inst, tree->root);
+	enter(inst, &tree->root);
 }
 
-struct binary_tree_node *binary_tree_iter_next_node(struct binary_tree_iterator *inst)
+struct binary_tree_node **binary_tree_iter_next_node(struct binary_tree_iterator *inst)
 {
-	struct binary_tree_node *node;
+	struct binary_tree_node **node;
 	if (!buffer_pop(&inst->stack, &node)) {
 		return NULL;
 	}
-	enter(inst, node->children[inst->reverse ? 0 : 1]);
+	enter(inst, &(*node)->children[inst->reverse ? 0 : 1]);
 	return node;
 }
 
 void *binary_tree_iter_next(struct binary_tree_iterator *inst, size_t *length)
 {
-	struct binary_tree_node *node = binary_tree_iter_next_node(inst);
-	if (node == NULL) {
+	struct binary_tree_node **pos = binary_tree_iter_next_node(inst);
+	if (pos == NULL || *pos == NULL) {
 		return NULL;
 	}
+	struct binary_tree_node *node = *pos;
 	if (length != NULL) {
 		*length = node->length;
 	}
