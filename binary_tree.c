@@ -31,6 +31,12 @@ void binary_tree_init(struct binary_tree *inst, binary_tree_comparator *cmp, voi
 	inst->compare = cmp ? cmp : binary_tree_default_compare;
 	inst->cmparg = cmparg;
 	inst->destroy = destructor;
+	inst->size = 0;
+}
+
+size_t binary_tree_size(struct binary_tree *inst)
+{
+	return inst->size;
 }
 
 static void *node_data(struct binary_tree_node **pos, size_t *length)
@@ -52,6 +58,25 @@ static const void *node_cdata(const node_clocation pos, size_t *length)
 	return node_data((struct binary_tree_node **) pos, length);
 }
 
+static void set_node(struct binary_tree *inst, struct binary_tree_node **pos, struct binary_tree_node *node)
+{
+	*pos = node;
+	inst->size++;
+}
+
+static struct binary_tree_node *unset_node(struct binary_tree *inst, struct binary_tree_node **pos)
+{
+	if (pos == NULL) {
+		return NULL;
+	}
+	struct binary_tree_node *node = *pos;
+	*pos = NULL;
+	if (node) {
+		inst->size--;
+	}
+	return node;
+}
+
 static struct binary_tree_node *do_create(const void *data, size_t length)
 {
 	struct binary_tree_node *node = malloc(sizeof(*node) + length);
@@ -61,16 +86,16 @@ static struct binary_tree_node *do_create(const void *data, size_t length)
 	return node;
 }
 
-static void do_destroy(struct binary_tree *inst, struct binary_tree_node **node)
+static void do_destroy(struct binary_tree *inst, struct binary_tree_node **pos)
 {
-	if (*node == NULL) {
+	struct binary_tree_node *node = unset_node(inst, pos);
+	if (node == NULL) {
 		return;
 	}
 	if (inst->destroy) {
-		inst->destroy((*node)->data, (*node)->length);
+		inst->destroy(node->data, node->length);
 	}
-	free(*node);
-	*node = NULL;
+	free(node);
 }
 
 static bool do_insert(struct binary_tree *inst, struct binary_tree_node *node)
@@ -78,45 +103,37 @@ static bool do_insert(struct binary_tree *inst, struct binary_tree_node *node)
 	if (node == NULL) {
 		return false;
 	}
-	struct binary_tree_node **p = binary_tree_find(inst, node->data, node->length);
-	bool is_new = *p == NULL;
+	struct binary_tree_node **pos = binary_tree_find(inst, node->data, node->length);
+	bool is_new = *pos == NULL;
 	if (is_new) {
-		*p = node;
+		set_node(inst, pos, node);
 	}
 	return is_new;
 }
 
-static struct binary_tree_node *do_remove(struct binary_tree *inst, struct binary_tree_node **node)
+static bool prune(struct binary_tree *inst, struct binary_tree_node **pos)
 {
 	(void) inst;
-	struct binary_tree_node *n = *node;
-	*node = NULL;
-	return n;
-}
-
-static bool prune(struct binary_tree *inst, struct binary_tree_node **node)
-{
-	(void) inst;
-	if (*node == NULL) {
+	if (*pos == NULL) {
 		return false;
 	}
-	prune(inst, &(*node)->children[0]);
-	prune(inst, &(*node)->children[1]);
-	do_destroy(inst, node);
+	prune(inst, &(*pos)->children[0]);
+	prune(inst, &(*pos)->children[1]);
+	do_destroy(inst, pos);
 	return true;
 }
 
 struct binary_tree_node **binary_tree_insert(struct binary_tree *inst, const void *data, size_t length, bool *isnew)
 {
-	struct binary_tree_node **p = binary_tree_find(inst, data, length);
-	bool is_new = *p == NULL;
+	struct binary_tree_node **pos = binary_tree_find(inst, data, length);
+	bool is_new = *pos == NULL;
 	if (isnew) {
 		*isnew = is_new;
 	}
 	if (is_new) {
-		*p = do_create(data, length);
+		set_node(inst, pos, do_create(data, length));
 	}
-	return p;
+	return pos;
 }
 
 bool binary_tree_insert_new(struct binary_tree *inst, const void *data, size_t length)
@@ -134,13 +151,13 @@ bool binary_tree_replace(struct binary_tree *inst, const void *data, size_t leng
 		return false;
 	}
 	struct binary_tree_node *children[] = {
-		do_remove(inst, &(*p)->children[0]),
-		do_remove(inst, &(*p)->children[1])
+		unset_node(inst, &(*p)->children[0]),
+		unset_node(inst, &(*p)->children[1])
 	};
 	binary_tree_delete(inst, p);
-	*p = do_create(data, length);
-	(*p)->children[0] = children[0];
-	(*p)->children[1] = children[1];
+	set_node(inst, p, do_create(data, length));
+	set_node(inst, &(*p)->children[0], children[0]);
+	set_node(inst, &(*p)->children[1], children[1]);
 	return true;
 }
 
@@ -157,8 +174,8 @@ bool binary_tree_delete(struct binary_tree *inst, struct binary_tree_node **node
 	}
 	struct binary_tree_node *n = *node;
 	struct binary_tree_node *children[] = {
-		do_remove(inst, &n->children[0]),
-		do_remove(inst, &n->children[1])
+		unset_node(inst, &n->children[0]),
+		unset_node(inst, &n->children[1])
 	};
 	do_destroy(inst, node);
 	do_insert(inst, children[0]);

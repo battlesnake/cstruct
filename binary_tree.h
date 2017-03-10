@@ -23,9 +23,13 @@ struct binary_tree {
 	binary_tree_comparator *compare;
 	binary_tree_destructor *destroy;
 	void *cmparg;
+	size_t size;
 };
 
 void binary_tree_init(struct binary_tree *inst, binary_tree_comparator *cmp, void *cmparg, binary_tree_destructor *destructor);
+
+/* Number of items in the tree */
+size_t binary_tree_size(struct binary_tree *inst);
 
 /* Insert node, return existing node (without modifying) on conflict */
 struct binary_tree_node **binary_tree_insert(struct binary_tree *inst, const void *data, size_t length, bool *isnew);
