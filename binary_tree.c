@@ -123,6 +123,11 @@ static bool prune(struct binary_tree *inst, struct binary_tree_node **pos)
 	return true;
 }
 
+void binary_tree_clear(struct binary_tree *inst)
+{
+	prune(inst, &inst->root);
+}
+
 struct binary_tree_node **binary_tree_insert(struct binary_tree *inst, const void *data, size_t length, bool *isnew)
 {
 	struct binary_tree_node **pos = binary_tree_find(inst, data, length);

@@ -31,6 +31,9 @@ void binary_tree_init(struct binary_tree *inst, binary_tree_comparator *cmp, voi
 /* Number of items in the tree */
 size_t binary_tree_size(struct binary_tree *inst);
 
+/* Delete all items from tree */
+void binary_tree_clear(struct binary_tree *inst);
+
 /* Insert node, return existing node (without modifying) on conflict */
 struct binary_tree_node **binary_tree_insert(struct binary_tree *inst, const void *data, size_t length, bool *isnew);
 
