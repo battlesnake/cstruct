@@ -38,6 +38,10 @@ void list_concatenate(struct list **list, struct list **data);
 size_t list_each(struct list *start, list_iterator *cb);
 size_t list_each_s(struct list *start, list_stateful_iterator *cb, void *state);
 
+/* Count for how many items the predicate returns true */
+size_t list_count(struct list *start, list_predicate *cb);
+size_t list_count_s(struct list *start, list_stateful_predicate *cb, void *state);
+
 /*
  * Remove all items for which the predicate returns false, returns number of
  * items removed

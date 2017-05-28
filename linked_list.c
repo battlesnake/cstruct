@@ -153,6 +153,25 @@ size_t list_each_s(struct list *start, list_stateful_iterator *cb, void *state)
 	return count;
 }
 
+size_t list_count(struct list *start, list_predicate *cb)
+{
+	return list_count_s(start, predicate_proxy, (void *) cb);
+}
+
+size_t list_count_s(struct list *start, list_stateful_predicate *cb, void *state)
+{
+	if (start == NULL) {
+		return 0;
+	}
+	struct list *item = start;
+	size_t count = 0;
+	do {
+		count += cb(state, item->data) ? 1 : 0;
+		item = item->next;
+	} while (item != start);
+	return count;
+}
+
 size_t list_filter(struct list **list, list_predicate *cb)
 {
 	return list_filter_s(list, predicate_proxy, (void *) cb);
